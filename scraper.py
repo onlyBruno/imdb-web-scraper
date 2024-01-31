@@ -3,6 +3,7 @@ Este script extrai detalhes de filmes populares da IMDb.
 
 Author: Bruno Medice
 Date: November 18, 2023
+Update: January 31, 2024
 """
 import time
 import csv
@@ -69,13 +70,12 @@ def extract_movie_details(movie_link, output_file):
     response = requests.get(movie_link, headers=headers, timeout=10)
     movie_soup = BeautifulSoup(response.content, 'html.parser')
     title, date, position, rating, summary = '', '', '', '', ''
-
     movie_data = movie_soup.find(
         'div', attrs={'class': 'sc-e226b0e3-3 dwkouE'})
     if movie_data:
         # Extraindo informações do filme
         title = movie_data.find('h1').find(
-            'span', attrs={'class': 'sc-7f1a92f5-1 benbRT'}).get_text()
+            'span', attrs={'class': 'hero__primary-text'}).get_text()
         date = movie_data.find('a', attrs={
                                'class': 'ipc-link ipc-link--baseAlt ' +
                                'ipc-link--inherit-color'}).get_text().strip()
@@ -84,7 +84,7 @@ def extract_movie_details(movie_link, output_file):
         rating = movie_data.find(
             'span', attrs={'class': 'sc-bde20123-1 cMEQkK'}).get_text()
         summary = movie_soup.find(
-            'span', attrs={'class': 'sc-466bb6c-1 dWufeH'}).get_text().strip()
+            'span', attrs={'class': 'sc-466bb6c-2 chnFO'}).get_text().strip()
 
     # Verificando se todos os dados necessários estão disponíveis antes de gravar em CSV
     if all([position, title, date, rating, summary]):
@@ -102,7 +102,13 @@ def extract_movies(soup, output_directory):
     """
     movie_list = soup.findAll(
         'div', class_='ipc-title ipc-title--base ipc-title--title ipc-title-link-no-icon ' +
-        'ipc-title--on-textPrimary sc-479faa3c-9 dkLVoC cli-title')
+        'ipc-title--on-textPrimary sc-1e00898e-9 jQixeG cli-title')
+    
+    # Verificando se a movie_list retornou vazia e caso positivo encerra script.
+    if not movie_list:
+        print_error_message_box("Nenhum filme encontrado.",
+                                "Script será encerrado. Por favor, verifique as linhas correspondentes a extração dos filmes")
+        return
 
     # Criando links para os filmes
     movie_links = ['https://imdb.com' +
@@ -116,6 +122,32 @@ def extract_movies(soup, output_directory):
     with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
         executor.map(lambda link: extract_movie_details(
             link, output_file), movie_links)
+
+def print_error_message_box(*messages):
+    """
+    Imprime uma mensagem de erro cercada por uma caixa de asteriscos com texto centralizado.
+
+    Parameters:
+     - mensage (str): A mensagem de erro a ser exibida.
+
+    Example:
+    >>> print_error_message_box("Nenhum filme encontrado. Script será encerrado. Por favor, verifique as linhas correspondentes a extração dos filmes")
+    """
+    max_length = max(len(message) for message in messages) + 6
+    border_length = max_length + 6
+    border = '*' * border_length
+    line = '*' + ' ' * (border_length - 2) + '*'
+
+    print('\n' + border)
+    print(line)
+
+    for message in messages:
+        spaces_before = (border_length - len(message)-2) // 2
+        spaces_after = border_length - len(message) - spaces_before -2
+        print(f'*{" " * spaces_before}{message}{" " * spaces_after}*')
+
+    print(line)
+    print(border + '\n')
 
 
 def main():
@@ -154,7 +186,7 @@ def main():
         print(f"Um erro ocorreu: {e}")
 
     end_time = time.time()
-    print(f'Tempo total gasto: {round(end_time - start_time)}')
+    print(f'Tempo total gasto: {round(end_time - start_time)} segundos')
 
 if __name__ == '__main__':
     main()
