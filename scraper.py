@@ -27,8 +27,6 @@ OUTPUT_DIRECTORY = './output'
 csv_lock = threading.Lock()
 
 # Função para garantir nome único
-
-
 def get_unique_filename(base_filename, directory):
     """
     Retorna um caminho de arquivo único no diretório especificado.
@@ -36,7 +34,6 @@ def get_unique_filename(base_filename, directory):
     Parameters:
     - base_filename (str): O nome base do arquivo.
     - directory (str): O diretório onde o arquivo deve ser salvo.
-
     """
     return os.path.join(directory, f"{base_filename}.csv")
 
@@ -48,7 +45,6 @@ def write_to_csv(output_file, data):
     Parameters:
     - output_file (str): O caminho do arquivo CSV.
     - data (list): Lista de dados a serem escritos no arquivo.
-
     """
     with csv_lock:
         with open(output_file, mode='a', newline='', encoding='utf-8') as file:
@@ -64,14 +60,14 @@ def extract_movie_details(movie_link, output_file):
     Parameters:
     - movie_link (str): O URL do filme.
     - output_file (str): O caminho do arquivo CSV para escrever os detalhes do filme.
-
     """
     time.sleep(random.uniform(0, 0.2))
     response = requests.get(movie_link, headers=headers, timeout=10)
     movie_soup = BeautifulSoup(response.content, 'html.parser')
     title, date, position, rating, summary = '', '', '', '', ''
     movie_data = movie_soup.find(
-        'div', attrs={'class': 'sc-e226b0e3-3 dwkouE'})
+        'div', attrs={'class': 'sc-491663c0-3 bdjVSf'})
+    # Encontrando e extraindo apenas o Summary
     if movie_data:
         # Extraindo informações do filme
         title = movie_data.find('h1').find(
@@ -83,8 +79,9 @@ def extract_movie_details(movie_link, output_file):
             'div', attrs={'class': 'sc-5f7fb5b4-1 fTREEx'}).get_text()
         rating = movie_data.find(
             'span', attrs={'class': 'sc-bde20123-1 cMEQkK'}).get_text()
+        # Extraindo o summary de uma outra parte do html
         summary = movie_soup.find(
-            'span', attrs={'class': 'sc-466bb6c-2 chnFO'}).get_text().strip()
+        'span', attrs={'class': 'sc-eb5317c9-1 bpVsNr'}).get_text()
 
     # Verificando se todos os dados necessários estão disponíveis antes de gravar em CSV
     if all([position, title, date, rating, summary]):
@@ -101,8 +98,7 @@ def extract_movies(soup, output_directory):
 
     """
     movie_list = soup.findAll(
-        'div', class_='ipc-title ipc-title--base ipc-title--title ipc-title-link-no-icon ' +
-        'ipc-title--on-textPrimary sc-1e00898e-9 jQixeG cli-title')
+        'div', class_='sc-b189961a-0 hBZnfJ cli-children')
     
     # Verificando se a movie_list retornou vazia e caso positivo encerra script.
     if not movie_list:
@@ -128,7 +124,7 @@ def print_error_message_box(*messages):
     Imprime uma mensagem de erro cercada por uma caixa de asteriscos com texto centralizado.
 
     Parameters:
-     - mensage (str): A mensagem de erro a ser exibida.
+     - message (str): A mensagem de erro a ser exibida.
 
     Example:
     >>> print_error_message_box("Nenhum filme encontrado. Script será encerrado. Por favor, verifique as linhas correspondentes a extração dos filmes")
@@ -143,7 +139,7 @@ def print_error_message_box(*messages):
 
     for message in messages:
         spaces_before = (border_length - len(message)-2) // 2
-        spaces_after = border_length - len(message) - spaces_before -2
+        spaces_after = border_length - len(message) - spaces_before - 2
         print(f'*{" " * spaces_before}{message}{" " * spaces_after}*')
 
     print(line)
